@@ -1,0 +1,274 @@
+/* Soldier's Sports & Fitness Hub Full E-commerce Single-File React App (Tailwind-ready)
+
+How to use:
+
+1. This is a single-file React component (default export) ready to paste into a Vite/Next.js/React app.
+
+
+2. Project must have TailwindCSS configured. If you don't use Tailwind, replace classNames with your CSS.
+
+
+3. Replace placeholders (<<STORE_NAME>>, <<WHATSAPP_NUMBER>>, <<STORE_ADDRESS>>) with your real values before publishing.
+
+
+4. This is a mock e-commerce: payments are simulated. To integrate real payments, connect to Razorpay/Stripe/Paytm in checkout section.
+
+
+5. Data persistence: cart and orders saved to localStorage.
+
+
+6. Replace product images with your own. Currently using placeholders.
+
+
+
+Features included:
+
+Product catalog with categories and search
+
+Product detail modal
+
+Cart with add/remove/quantity
+
+Mock checkout (collects shipping info and creates 'order')
+
+Order history (localStorage)
+
+Admin demo: view orders (simple password-protected view, password: "admin123")
+
+WhatsApp contact button (placeholder number) and 'Contact Us' modal
+
+Responsive layout, army-inspired styling (olive/black), accessible UI
+
+
+NOTES ON PRIVACY: This template uses placeholders for contact/address. Replace them locally before publishing. */
+
+import React, { useEffect, useState } from "react";
+
+// ---------- Sample product data (replace with your actual inventory or API) ---------- const SAMPLE_PRODUCTS = [ { id: "p-001", title: "Tactical Training Gloves", category: "Accessories", price: 799, oldPrice: 999, img: "https://via.placeholder.com/400x300?text=Tactical+Gloves", desc: "Durable grip gloves ideal for heavy training. Reinforced palms and breathable mesh.", stock: 50, }, { id: "p-002", title: "Military-style Gym Bag", category: "Bags", price: 1499, oldPrice: null, img: "https://via.placeholder.com/400x300?text=Gym+Bag", desc: "Spacious, water-resistant bag with separate shoe compartment.", stock: 20, }, { id: "p-003", title: "Adjustable Dumbbell (2-in-1)", category: "Equipment", price: 2499, oldPrice: 2999, img: "https://via.placeholder.com/400x300?text=Adjustable+Dumbbell", desc: "Space-saving adjustable dumbbell set suitable for home workouts.", stock: 10, }, { id: "p-004", title: "Protein Shaker Bottle", category: "Supplements", price: 399, oldPrice: null, img: "https://via.placeholder.com/400x300?text=Shaker+Bottle", desc: "Leakproof bottle with measuring scale and mixing ball.", stock: 200, }, { id: "p-005", title: "Compression Sleeves", category: "Wear", price: 499, oldPrice: 699, img: "https://via.placeholder.com/400x300?text=Compression+Sleeves", desc: "Improve circulation and reduce muscle fatigue during workouts.", stock: 75, }, ];
+
+// ---------- Helpers ---------- const save = (key, value) => localStorage.setItem(key, JSON.stringify(value)); const load = (key, fallback) => { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; } };
+
+// ---------- App Component ---------- export default function App() { // Store metadata const STORE = { name: "Soldier's Sports & Fitness Hub", tagline: "Built by a soldier • Gear up, stay strong", whatsapp: "<<WHATSAPP_NUMBER>>", // replace before publishing address: "<<STORE_ADDRESS>>", // replace before publishing };
+
+const [products] = useState(SAMPLE_PRODUCTS); const [query, setQuery] = useState(""); const [category, setCategory] = useState("All"); const [cart, setCart] = useState(load("ssfh_cart", {})); const [showDetail, setShowDetail] = useState(null); const [showCheckout, setShowCheckout] = useState(false); const [orders, setOrders] = useState(load("ssfh_orders", [])); const [showOrdersModal, setShowOrdersModal] = useState(false); const [adminMode, setAdminMode] = useState(false); const [contactModal, setContactModal] = useState(false);
+
+useEffect(() => save("ssfh_cart", cart), [cart]); useEffect(() => save("ssfh_orders", orders), [orders]);
+
+// Cart operations const addToCart = (product, qty = 1) => { setCart((c) => { const next = { ...c }; if (!next[product.id]) next[product.id] = { ...product, qty: 0 }; next[product.id].qty += qty; if (next[product.id].qty > product.stock) next[product.id].qty = product.stock; return next; }); };
+
+const updateQty = (productId, qty) => { setCart((c) => { const next = { ...c }; if (!next[productId]) return next; next[productId].qty = Math.max(0, qty); if (next[productId].qty === 0) delete next[productId]; return next; }); };
+
+const clearCart = () => setCart({});
+
+const cartItems = Object.values(cart); const cartTotal = cartItems.reduce((s, p) => s + p.price * p.qty, 0);
+
+// Search + filter const categories = ["All", ...new Set(products.map((p) => p.category))]; const visibleProducts = products.filter((p) => { const matchesQuery = (p.title + p.desc).toLowerCase().includes(query.toLowerCase()); const matchesCat = category === "All" || p.category === category; return matchesQuery && matchesCat; });
+
+// Checkout mock const handleCheckout = (shipping) => { // Create order const newOrder = { id: "ORD-" + Date.now(), createdAt: new Date().toISOString(), items: cartItems, total: cartTotal, shipping, status: "Processing", }; setOrders((o) => [newOrder, ...o]); clearCart(); setShowCheckout(false); alert("Order placed! (This is a demo). Order ID: " + newOrder.id); };
+
+// Admin simple auth const tryAdmin = (pwd) => { if (pwd === "admin123") { setAdminMode(true); setShowOrdersModal(true); return true; } return false; };
+
+return ( <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-gray-100"> <header className="max-w-6xl mx-auto p-4 flex items-center justify-between"> <div className="flex items-center gap-3"> <div className="w-12 h-12 rounded-lg bg-olive-700 flex items-center justify-center text-xl font-bold border-2 border-gray-700">SS</div> <div> <h1 className="text-2xl font-extrabold">{STORE.name}</h1> <p className="text-sm text-gray-300">{STORE.tagline}</p> </div> </div>
+
+<nav className="flex items-center gap-4">
+      <button onClick={() => setContactModal(true)} className="px-3 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500">Contact</button>
+      <button onClick={() => setShowOrdersModal(true)} className="px-3 py-2 rounded-md bg-yellow-600 hover:bg-yellow-500">Orders</button>
+      <div className="relative">
+        <button onClick={() => setShowCheckout(true)} className="px-3 py-2 rounded-md bg-sky-600 hover:bg-sky-500">Cart ({cartItems.length})</button>
+      </div>
+    </nav>
+  </header>
+
+  <main className="max-w-6xl mx-auto grid gap-6 p-4 md:grid-cols-4">
+    <aside className="md:col-span-1 bg-gray-900/40 p-4 rounded-lg">
+      <div className="mb-4">
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search products..." className="w-full p-2 rounded bg-gray-800 border border-gray-700" />
+      </div>
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold mb-2">Categories</h3>
+        <div className="flex flex-wrap gap-2">
+          {categories.map((c) => (
+            <button key={c} onClick={() => setCategory(c)} className={`px-3 py-1 rounded ${category === c ? "bg-emerald-600" : "bg-gray-800"}`}>
+              {c}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-gray-900/50 p-3 rounded">
+        <h4 className="text-sm font-bold">Quick Info</h4>
+        <p className="text-xs text-gray-300 mt-2">Free local pickup available. Replace contact details in settings.</p>
+        <div className="mt-3 text-xs">
+          <div>Location: <span className="font-medium">(replace before publish)</span></div>
+          <div>WhatsApp: <span className="font-medium">(replace before publish)</span></div>
+        </div>
+      </div>
+    </aside>
+
+    <section className="md:col-span-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {visibleProducts.map((p) => (
+          <article key={p.id} className="bg-gray-900/30 rounded overflow-hidden shadow-lg">
+            <img src={p.img} alt={p.title} className="w-full h-44 object-cover" />
+            <div className="p-3">
+              <h3 className="font-bold">{p.title}</h3>
+              <p className="text-xs text-gray-300 my-1">{p.category}</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-lg font-bold">₹{p.price}</div>
+                  {p.oldPrice && <div className="text-xs line-through text-gray-400">₹{p.oldPrice}</div>}
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => addToCart(p, 1)} className="px-3 py-1 rounded bg-emerald-600">Add</button>
+                  <button onClick={() => setShowDetail(p)} className="px-3 py-1 rounded bg-gray-700">View</button>
+                </div>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    {/* Cart / Checkout sidebar (mobile stacked) */}
+    <aside className="md:col-span-4 mt-4">
+      <div className="bg-gray-900/40 p-4 rounded flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <div className="text-sm">Cart items: <span className="font-bold">{cartItems.length}</span></div>
+          <div className="text-lg font-extrabold">Total: ₹{cartTotal}</div>
+        </div>
+        <div className="flex gap-2">
+          <button disabled={cartItems.length===0} onClick={() => setShowCheckout(true)} className="px-4 py-2 rounded bg-sky-600 disabled:opacity-50">Checkout</button>
+          <button onClick={() => clearCart()} className="px-4 py-2 rounded bg-red-600">Clear</button>
+          <a href={`https://wa.me/${STORE.whatsapp}`} target="_blank" rel="noreferrer" className="px-4 py-2 rounded bg-green-600">Whatsapp</a>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3">
+        {cartItems.map((item) => (
+          <div key={item.id} className="bg-gray-900/30 p-3 rounded flex items-center gap-3">
+            <img src={item.img} alt="" className="w-20 h-20 object-cover rounded" />
+            <div className="flex-1">
+              <div className="font-bold">{item.title}</div>
+              <div className="text-xs text-gray-300">₹{item.price} x {item.qty} = ₹{item.price * item.qty}</div>
+              <div className="mt-2 flex gap-2">
+                <button onClick={() => updateQty(item.id, item.qty - 1)} className="px-2 py-1 rounded bg-gray-700">-</button>
+                <div className="px-3 py-1 bg-gray-800 rounded">{item.qty}</div>
+                <button onClick={() => updateQty(item.id, item.qty + 1)} className="px-2 py-1 rounded bg-gray-700">+</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </aside>
+  </main>
+
+  {/* Product Detail Modal */}
+  {showDetail && (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4">
+      <div className="bg-gray-900 rounded-lg max-w-3xl w-full overflow-hidden">
+        <div className="grid md:grid-cols-2">
+          <img src={showDetail.img} alt="" className="w-full h-80 object-cover" />
+          <div className="p-4">
+            <h2 className="text-2xl font-bold">{showDetail.title}</h2>
+            <p className="text-sm text-gray-300 mt-2">{showDetail.desc}</p>
+            <div className="mt-4">
+              <div className="text-xl font-bold">₹{showDetail.price}</div>
+              {showDetail.oldPrice && <div className="text-sm line-through">₹{showDetail.oldPrice}</div>}
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button onClick={() => { addToCart(showDetail, 1); setShowDetail(null); }} className="px-4 py-2 rounded bg-emerald-600">Add to Cart</button>
+              <button onClick={() => setShowDetail(null)} className="px-4 py-2 rounded bg-gray-700">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* Checkout Modal */}
+  {showCheckout && (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4">
+      <div className="bg-gray-900 rounded-lg w-full max-w-xl p-4">
+        <h3 className="text-xl font-bold">Checkout</h3>
+        <p className="text-sm text-gray-300">Total: ₹{cartTotal}</p>
+        <CheckoutForm onSubmit={handleCheckout} onCancel={() => setShowCheckout(false)} />
+      </div>
+    </div>
+  )}
+
+  {/* Orders / Admin Modal */}
+  {showOrdersModal && (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4">
+      <div className="bg-gray-900 rounded-lg w-full max-w-3xl p-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-bold">Orders</h3>
+          <div className="flex gap-2">
+            {!adminMode && (
+              <AdminLogin onLogin={(pwd) => { if (!tryAdmin(pwd)) alert('Wrong password. Demo password: admin123') }} />
+            )}
+            <button onClick={() => { setShowOrdersModal(false); setAdminMode(false); }} className="px-3 py-1 rounded bg-gray-700">Close</button>
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          {orders.length === 0 && <div className="text-sm text-gray-300">No orders yet.</div>}
+          {orders.map((o) => (
+            <div key={o.id} className="bg-gray-900/30 p-3 rounded">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-bold">{o.id}</div>
+                  <div className="text-xs text-gray-300">{new Date(o.createdAt).toLocaleString()}</div>
+                </div>
+                <div className="text-right">
+                  <div className="font-extrabold">₹{o.total}</div>
+                  <div className="text-xs">{o.status}</div>
+                </div>
+              </div>
+
+              <div className="mt-2 text-sm">
+                <div>Shipping: {o.shipping.name}, {o.shipping.city}</div>
+                <div className="mt-2">
+                  {o.items.map((it) => (
+                    <div key={it.id} className="flex items-center gap-2 mt-1">
+                      <img src={it.img} alt="" className="w-12 h-12 object-cover rounded" />
+                      <div className="text-sm">{it.title} x {it.qty}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          ))}
+        </div>
+
+        {adminMode && <div className="mt-4 text-sm text-gray-300">Admin: You can manage orders here in a real deployment by connecting backend APIs.</div>}
+      </div>
+    </div>
+  )}
+
+  {/* Contact Modal */}
+  {contactModal && (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4">
+      <div className="bg-gray-900 rounded-lg w-full max-w-md p-4">
+        <h3 className="text-xl font-bold">Contact Us</h3>
+        <p className="text-sm text-gray-300 mt-2">For orders & enquiries, message us on WhatsApp (replace number in settings).</p>
+        <div className="mt-4 flex gap-2">
+          <a href={`https://wa.me/${STORE.whatsapp}`} target="_blank" rel="noreferrer" className="px-4 py-2 rounded bg-green-600">Message on WhatsApp</a>
+          <button onClick={() => setContactModal(false)} className="px-4 py-2 rounded bg-gray-700">Close</button>
+        </div>
+      </div>
+    </div>
+  )}
+
+  <footer className="max-w-6xl mx-auto p-4 text-center text-gray-400 text-sm">© {new Date().getFullYear()} {STORE.name} — Built with grit. Replace placeholders before publishing.</footer>
+</div>
+
+); }
+
+// ---------- Checkout Form Component ---------- function CheckoutForm({ onSubmit, onCancel }) { const [name, setName] = useState(""); const [city, setCity] = useState(""); const [phone, setPhone] = useState("");
+
+const handle = (e) => { e.preventDefault(); if (!name || !city || !phone) return alert("Please fill shipping info."); onSubmit({ name, city, phone }); };
+
+return ( <form onSubmit={handle} className="mt-3 space-y-3"> <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className="w-full p-2 rounded bg-gray-800 border border-gray-700" /> <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="City / Town" className="w-full p-2 rounded bg-gray-800 border border-gray-700" /> <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" className="w-full p-2 rounded bg-gray-800 border border-gray-700" /> <div className="flex gap-2"> <button type="submit" className="px-4 py-2 rounded bg-emerald-600">Place Order (Demo)</button> <button type="button" onClick={onCancel} className="px-4 py-2 rounded bg-gray-700">Cancel</button> </div> </form> ); }
+
+// ---------- Admin Login Component ---------- function AdminLogin({ onLogin }) { const [pwd, setPwd] = useState(""); return ( <div className="flex items-center gap-2"> <input value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="admin password" className="p-2 rounded bg-gray-800 border border-gray-700 text-xs" /> <button onClick={() => onLogin(pwd)} className="px-3 py-1 rounded bg-indigo-600">Login</button> </div> ); }
